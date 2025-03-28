@@ -1,34 +1,28 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+"use server"
 
-import { createClient } from '@/utils/supabase/server'
+import { login } from "@/utils/supabase/auth";
+import { isAuthError } from "@supabase/supabase-js";
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
-
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData
+) {
+  try {
+    await login("credentials", formData);
+  } catch (error) {
+    if (isAuthError(error)) {
+      console.log(error.code)
+      switch (error.code) {
+        case "invalid_credentials":
+          return "Invalid credentials.";
+        case "over_request_rate_limit":
+          return "Too many requests. Try again later.";
+        default:
+          return "Something went wrong.";
+      }
+    }
+    throw error;
   }
-
-  const { error } = await supabase.auth.signInWithPassword(data)
-
-  if (error) {
-    redirect('/error')
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/')
-}
-
-export async function logout() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-
-  revalidatePath('/', 'layout')
-  redirect('/')
 }

@@ -1,6 +1,14 @@
-import { login } from './actions'
+"use client"
+
+import { useActionState } from 'react'
+import { authenticate } from './actions'
+import { useSearchParams } from "next/navigation";
+import { CircleAlert } from 'lucide-react';
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const callbackURL = searchParams.get("callbackUrl") || "/private"
+  const [error, formAction, isPending] = useActionState(authenticate, undefined)
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 bg-white p-10 rounded-xl shadow-xl">
@@ -12,7 +20,7 @@ export default function LoginPage() {
             Enter your credentials to access the admin panel
           </p>
         </div>
-        <form className="mt-8 space-y-6">
+        <form className="mt-8 space-y-6" action={formAction}>
           <div>
             <div className="mb-5">
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
@@ -45,12 +53,25 @@ export default function LoginPage() {
           </div>
 
           <div>
+            <input type="hidden" name="redirectTo" value={callbackURL} />
             <button
-              formAction={login}
+              aria-disabled={isPending}
               className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
               Sign in to dashboard
             </button>
+            <div
+          className="flex h-8 items-end space-x-1"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {error && (
+            <>
+              <CircleAlert className="h-5 w-5 text-red-500" />
+              <p className="text-sm text-red-500">{error}</p>
+            </>
+          )}
+        </div>
           </div>
           
           <div className="text-center text-xs text-slate-500 mt-6">
